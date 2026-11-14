@@ -1,0 +1,12 @@
+# 실험 D 대표 프로필 8개 (docs/03 §5.3, 01 FR-BT-07·14). app의 application.yml이 spring.config.import로 읽는다.
+# Spring이 profile 모듈의 설문 계산(§6.1)으로 설정값을 만들어 엔진 I10의 profiles[].settings로 보낸다.
+backtest:
+  profiles:
+    - { key: STABLE_REP,     q: [4,4,4,4,4,4,4], a2: 2, a3: true, a4: 2, a5: 4, a6: [ANY], a7: [] }   # 7점 안정, -5%
+    - { key: NEUTRAL_REP,    q: [3,3,3,3,3,3,3], a2: 2, a3: true, a4: 2, a5: 4, a6: [ANY], a7: [] }   # 14점 중립, -10%
+    - { key: AGGRESSIVE_REP, q: [1,1,1,1,1,1,1], a2: 1, a3: true, a4: 1, a5: 4, a6: [ANY], a7: [] }   # 35점 공격, 제한 없음
+    - { key: LIMIT_NONE,     q: [3,3,3,3,3,3,1], a2: 1, a3: true, a4: 1, a5: 4, a6: [ANY], a7: [] }   # 이하 모두 중립형
+    - { key: LIMIT_20,       q: [3,3,3,3,3,3,2], a2: 1, a3: true, a4: 1, a5: 4, a6: [ANY], a7: [] }
+    - { key: LIMIT_10,       q: [3,3,3,3,3,3,3], a2: 1, a3: true, a4: 1, a5: 4, a6: [ANY], a7: [] }
+    - { key: LIMIT_05,       q: [3,3,3,3,3,3,4], a2: 1, a3: true, a4: 1, a5: 4, a6: [ANY], a7: [] }
+    - { key: LIMIT_03,       q: [3,3,3,3,3,3,5], a2: 1, a3: true, a4: 1, a5: 4, a6: [ANY], a7: [] }
