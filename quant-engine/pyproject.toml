@@ -1,0 +1,16 @@
+[project]
+name = "quant-engine"
+version = "0.1.0"
+description = "성향별 포트폴리오 서비스의 Python 퀀트 엔진 (시장 데이터 + 계산 + 백테스트)"
+requires-python = ">=3.12,<3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "mysql: 실제 MySQL 8.4 컨테이너(Testcontainers)가 필요한 테스트. Docker가 없으면 건너뛴다",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:testcontainers.*",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+    "ignore:The 'generic' unit for NumPy timedelta is deprecated:DeprecationWarning",
+]

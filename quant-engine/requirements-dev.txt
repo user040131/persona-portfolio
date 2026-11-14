@@ -1,0 +1,3 @@
+-r requirements.txt
+pytest>=8.2
+testcontainers[mysql]>=4.7
