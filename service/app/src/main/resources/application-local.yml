@@ -1,0 +1,5 @@
+# 로컬 개발용 (--spring.profiles.active=local).
+# docker compose로 띄운 MySQL(3307)과 Python 엔진(127.0.0.1:8000)을 쓴다.
+quant:
+  base-url: http://127.0.0.1:8000
+  stub-enabled: false

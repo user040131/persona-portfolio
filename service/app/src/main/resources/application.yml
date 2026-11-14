@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: portfolio-service
+  config:
+    import:
+      - classpath:survey.yml              # 설문 정의 (profile 모듈, docs/03 §5.1)
+      - classpath:backtest-profiles.yml   # 실험 D 대표 프로필 (backtest 모듈, docs/03 §5.3)
+  datasource:
+    # 로컬 기본값은 docker compose의 MySQL(호스트 포트 3307)
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/app?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:app_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:app_pw}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # 스키마는 Flyway만 바꾼다
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:false}
+  jackson:
+    time-zone: UTC
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 7d
+      cookie:
+        http-only: true
+        same-site: lax
+
+# ---- 프로필 매핑 파라미터 (docs/01 §5 소유=S, docs/03 §5.4) ----
+portfolio:
+  min-invest-amount: 20000000
+  profile:
+    loss-limit-by-q7: [0, -0.20, -0.10, -0.05, -0.03]   # 0 = 제한 없음
+    cash-by-a2: [0, 0.10, 0.30, 0.50]
+    cash-no-emergency-add: 0.05
+    stock-cap: { STABLE: 0.40, NEUTRAL: 0.60, AGGRESSIVE: 0.90 }
+    stock-cap-a4-adj: [0, 0, -0.05, -0.10]
+    n-stocks-by-a5: [10, 15, 20, 15]
+    stock-limit: { STABLE: 0.15, NEUTRAL: 0.20, AGGRESSIVE: 0.25 }
+    sector-limit: { STABLE: 0.30, NEUTRAL: 0.40, AGGRESSIVE: 0.50 }
+    default-method: { STABLE: MIN_VARIANCE, NEUTRAL: INVERSE_VOL, AGGRESSIVE: EQUAL }
+    vol-exclude-top-pct: { STABLE: 0.30, NEUTRAL: 0.10, AGGRESSIVE: 0 }
+    exclude-overheat: { STABLE: true, NEUTRAL: true, AGGRESSIVE: false }
+    a6-bonus: 0.10
+    factor-weights:
+      STABLE:     { VALUE: 0.25, QUALITY: 0.30, MOMENTUM: 0.10, STABILITY: 0.25, DIVIDEND: 0.10 }
+      NEUTRAL:    { VALUE: 0.30, QUALITY: 0.30, MOMENTUM: 0.25, STABILITY: 0.15, DIVIDEND: 0 }
+      AGGRESSIVE: { VALUE: 0.25, QUALITY: 0.25, MOMENTUM: 0.45, STABILITY: 0.05, DIVIDEND: 0 }
+
+# ---- Python 퀀트 엔진 (docs/02 §5) ----
+quant:
+  base-url: ${QUANT_BASE_URL:http://localhost:8000}
+  service-key: ${QUANT_SERVICE_KEY:dev-only-change-me}
+  stub-enabled: ${QUANT_STUB_ENABLED:false}   # true면 엔진 대신 대역 데이터 (application-local.yml)
+  timeouts:
+    connect: 2s
+    default-read: 5s
+    compute: 15s
+    evaluate: 5s
+    history-card: 30s
+
+logging:
+  level:
+    kr.team2.portfolio: INFO
