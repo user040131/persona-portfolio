@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('내 포트폴리오')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="wide" id="pf" th:attr="data-min=${minInvestAmount}">
+    <p class="muted" id="loading">불러오는 중…</p>
+    <p class="notice error" id="error" hidden></p>
+
+    <div id="content" hidden>
+        <section class="card alerts" id="alerts-card" hidden>
+            <h2>리밸런싱 알림 <span class="muted small" id="alert-count"></span></h2>
+            <ul class="alert-list" id="alert-list"></ul>
+        </section>
+
+        <section class="card">
+            <div class="reco-head">
+                <h1>내 포트폴리오</h1>
+                <a th:href="@{/profile}">내 투자 성향</a>
+            </div>
+            <p class="total"><strong id="total"></strong> <span class="muted" id="meta"></span></p>
+            <p class="notice" id="edit-banner" hidden>
+                수정 중이에요. 그래프와 비중은 입력한 값으로 바로 다시 계산해요. <strong>저장</strong>을 눌러야 반영돼요.
+            </p>
+
+            <div class="chart-row">
+                <div class="chart-box"><canvas id="chart" aria-label="자산·종목 비중 원그래프"></canvas></div>
+                <div>
+                    <ul class="asset-list" id="asset-list"></ul>
+                    <p class="muted small" id="chart-help">그래프의 안쪽 고리(종목)를 누르면 자세히 볼 수 있어요.</p>
+                </div>
+            </div>
+            <div class="detail" id="detail" hidden></div>
+        </section>
+
+        <section class="card">
+            <h2>업종 비중 <span class="muted small">(주식 안에서)</span></h2>
+            <ul class="bars sector-bars" id="sector-bars"></ul>
+            <p class="muted small" id="sector-help"></p>
+        </section>
+
+        <section class="card">
+            <div class="reco-head">
+                <h2>갖고 계신 것</h2>
+                <span class="actions">
+                    <button type="button" id="edit-btn">직접 고치기</button>
+                    <button type="button" class="primary" id="save-btn" hidden>저장</button>
+                    <button type="button" id="cancel-btn" hidden>취소</button>
+                </span>
+            </div>
+            <p class="notice error" id="edit-error" hidden></p>
+            <table class="table holdings">
+                <thead id="holding-head"></thead>
+                <tbody id="holding-rows"></tbody>
+            </table>
+            <div id="add-stock" hidden>
+                <input type="search" id="add-search" placeholder="종목 추가: 종목명 또는 코드 (예: 삼성전자, 005930)">
+                <ul class="search-results" id="add-results"></ul>
+            </div>
+            <table class="table">
+                <tbody>
+                <tr><td>채권 <span class="muted small">(국고채 3년 지수로 평가)</span></td>
+                    <td class="num" id="bond-cell"></td></tr>
+                <tr><td>현금</td><td class="num" id="cash-cell"></td></tr>
+                </tbody>
+            </table>
+            <p class="muted small" id="target-only"></p>
+        </section>
+
+        <section class="card next">
+            <h2>추가로 투자하기</h2>
+            <p>새로 넣을 금액을 입력하면, 지금 갖고 계신 것과 합쳐서 새 돈을 어디에 나눌지 추천해 드려요.</p>
+            <label class="amount">
+                <input type="text" inputmode="numeric" id="invest-amount" placeholder="20,000,000">
+                <span class="muted" th:text="'최소 ' + ${#numbers.formatInteger(minInvestAmount, 1, 'COMMA')} + '원'">최소 20,000,000원</span>
+            </label>
+            <p class="notice error" id="invest-error" hidden></p>
+            <p class="actions"><button type="button" class="primary" id="invest-btn">추천 받기</button></p>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/portfolio.js}"></script>
+</body>
+</html>

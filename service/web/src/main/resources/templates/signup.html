@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('회원가입')}"></head>
+<body>
+<main class="narrow">
+    <h1>회원가입</h1>
+
+    <form th:action="@{/signup}" th:object="${form}" method="post" class="stack" novalidate>
+        <label>아이디 <small class="muted">영문·숫자 4~20자</small>
+            <input type="text" th:field="*{username}" autocomplete="username" required autofocus>
+            <span class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></span>
+        </label>
+        <label>비밀번호 <small class="muted">8자 이상</small>
+            <input type="password" th:field="*{password}" autocomplete="new-password" required>
+            <span class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+        </label>
+        <label>비밀번호 확인
+            <input type="password" th:field="*{passwordConfirm}" autocomplete="new-password" required>
+            <span class="field-error" th:if="${#fields.hasErrors('passwordConfirm')}" th:errors="*{passwordConfirm}"></span>
+            <span class="field-error" th:if="${#fields.hasErrors('passwordMatching')}" th:errors="*{passwordMatching}"></span>
+        </label>
+        <button type="submit" class="primary">가입하기</button>
+    </form>
+
+    <p class="muted">이미 계정이 있나요? <a th:href="@{/login}">로그인</a></p>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

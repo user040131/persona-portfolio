@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- JS에서 /api 호출 시 CSRF 헤더로 보낸다 (docs/02 §3.4) -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <title th:text="${title} + ' · 성향별 포트폴리오'">성향별 포트폴리오</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<header th:fragment="header" class="site-header">
+    <a class="brand" th:href="@{/}">성향별 포트폴리오</a>
+    <nav class="site-nav"><a th:href="@{/}">홈</a> <a th:href="@{/profile}">내 성향</a> <a th:href="@{/backtests}">백테스트</a></nav>
+    <form th:action="@{/logout}" method="post" class="logout">
+        <button type="submit">로그아웃</button>
+    </form>
+</header>
+
+<footer th:fragment="footer" class="site-footer">
+    이 서비스는 수업 프로젝트이며 투자 권유가 아닙니다.
+</footer>
+
+</body>
+</html>
