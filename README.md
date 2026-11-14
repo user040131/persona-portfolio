@@ -12,6 +12,7 @@
 
 아래 링크는 해당 서비스의 실행 영상입니다
 https://youtu.be/_YFKWLxnkbk?si=ucO8rg8Jm12iunyu
+
 ---
 
 ## 목차
