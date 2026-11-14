@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('백테스트')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="wide">
+    <h1>백테스트</h1>
+    <p class="muted">이 서비스의 종목 고르기·비중 정하기를 과거에 그대로 했다면 어땠을지 확인해요.
+        매년 4월 첫 영업일에 새 재무로 종목을 바꿔요.</p>
+
+    <section class="card">
+        <h2>새로 돌리기</h2>
+        <div class="form-row">
+            <label>시작 연도 <select id="start-year"></select></label>
+            <label>거래 비용 (%) <input type="number" id="cost" value="0.3" min="0" max="5" step="0.05" class="qty"></label>
+        </div>
+        <div class="checks" id="experiments">
+            <label><input type="checkbox" value="A" checked> A. 팩터별 성과</label>
+            <label><input type="checkbox" value="B" checked> B. 비중 방식 비교</label>
+            <label><input type="checkbox" value="C" checked> C. 멀티팩터 vs 코스피</label>
+            <label><input type="checkbox" value="D" checked> D. 성향별 운용 (서비스 로직 그대로)</label>
+        </div>
+        <p class="notice error" id="error" hidden></p>
+        <p class="actions"><button type="button" class="primary" id="run-btn">돌리기</button>
+            <span class="muted small">보통 1~2분 걸려요. 화면을 닫아도 계속 계산해요.</span></p>
+    </section>
+
+    <section class="card">
+        <h2>내 백테스트</h2>
+        <table class="table">
+            <thead><tr><th>만든 때</th><th>기간</th><th>실험</th><th class="num">비용</th><th>상태</th></tr></thead>
+            <tbody id="jobs"></tbody>
+        </table>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/api.js}"></script>
+<script>
+  (() => {
+    const { api } = App;
+    const $ = (x) => document.getElementById(x);
+    const STATUS = { QUEUED: '기다리는 중', RUNNING: '계산 중', DONE: '완료', FAILED: '실패' };
+    const now = new Date().getFullYear();
+    for (let y = 2011; y <= now; y++) $('start-year').append(new Option(String(y), String(y), false, y === 2015));
+
+    async function load() {
+      const jobs = await api('GET', '/api/backtests');
+      $('jobs').replaceChildren(...(jobs.length ? jobs.map((j) => {
+        const tr = document.createElement('tr');
+        const link = `<a href="/backtests/${j.jobId}">${j.createdAt.replace('T', ' ').slice(0, 16)}</a>`;
+        tr.innerHTML = `<td>${link}</td><td>${j.startYear}년 ~ ${j.endDate ?? '최신'}</td>`
+          + `<td>${j.experiments.join(', ')}</td><td class="num">${(j.tradingCostRate * 100).toFixed(2)}%</td>`
+          + `<td>${STATUS[j.status] ?? j.status}</td>`;
+        return tr;
+      }) : [Object.assign(document.createElement('tr'), { innerHTML: '<td colspan="5" class="muted">아직 없어요.</td>' })]));
+    }
+
+    $('run-btn').addEventListener('click', async (e) => {
+      const experiments = [...document.querySelectorAll('#experiments input:checked')].map((c) => c.value);
+      if (!experiments.length) {
+        $('error').textContent = '실험을 하나 이상 골라 주세요.';
+        $('error').hidden = false;
+        return;
+      }
+      e.target.disabled = true;
+      try {
+        const job = await api('POST', '/api/backtests', {
+          startYear: Number($('start-year').value), tradingCostRate: Number($('cost').value) / 100, experiments,
+        });
+        location.href = `/backtests/${job.jobId}`;
+      } catch (err) {
+        $('error').textContent = err.message;
+        $('error').hidden = false;
+        e.target.disabled = false;
+      }
+    });
+    load();
+  })();
+</script>
+</body>
+</html>

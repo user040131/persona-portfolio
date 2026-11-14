@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('리밸런싱 제안')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="wide" id="al" th:attr="data-id=${alertId}">
+    <p><a th:href="@{/portfolio}">← 내 포트폴리오</a></p>
+    <p class="muted" id="loading">계산하는 중…</p>
+    <p class="notice error" id="error" hidden></p>
+
+    <div id="content" hidden>
+        <section class="card">
+            <h1>리밸런싱 제안</h1>
+            <p><span class="alert-title" id="alert-title"></span> <strong id="alert-text"></strong></p>
+            <p class="muted" id="help"></p>
+            <p class="muted small" id="meta"></p>
+        </section>
+
+        <section class="card">
+            <h2>이렇게 사고팔면 돼요</h2>
+            <table class="table">
+                <thead><tr><th>자산</th><th></th><th class="num">수량</th><th class="num">금액</th></tr></thead>
+                <tbody id="trade-rows"></tbody>
+            </table>
+            <p class="muted small">1주 단위로 내림해 계산했고, 남는 돈은 현금이에요. 거래 수수료·세금은 넣지 않았어요.
+                채권은 비슷한 국고채 ETF·펀드로 맞추면 돼요.</p>
+        </section>
+
+        <section class="card">
+            <h2>거래 전과 후</h2>
+            <div class="compare" id="compare"></div>
+            <details>
+                <summary>자산별 목표와 거래 후 비중</summary>
+                <table class="table">
+                    <thead><tr><th>자산</th><th class="num">목표</th><th class="num">거래 후</th></tr></thead>
+                    <tbody id="target-rows"></tbody>
+                </table>
+            </details>
+        </section>
+
+        <section class="card next">
+            <p class="muted">실제 주문은 쓰시는 증권사에서 해 주세요. 아래 버튼은 이 제안대로 했다고 포트폴리오에 기록하고,
+                목표 비중도 위 표로 바꿔요.</p>
+            <p class="notice error" id="apply-error" hidden></p>
+            <p class="actions">
+                <button type="button" class="primary" id="apply-btn">이대로 했어요</button>
+                <button type="button" id="dismiss-btn">알림만 닫기</button>
+            </p>
+            <p class="notice" id="closed" hidden>이미 닫힌 알림이에요. 지금 상태 기준의 제안을 참고로 보여드려요.</p>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/alert.js}"></script>
+</body>
+</html>

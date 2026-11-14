@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('로그인')}"></head>
+<body>
+<main class="narrow">
+    <h1>로그인</h1>
+
+    <p class="notice error" th:if="${param.error}">아이디 또는 비밀번호가 맞지 않아요.</p>
+    <p class="notice" th:if="${param.logout}">로그아웃했어요.</p>
+    <p class="notice" th:if="${param.signup}">가입이 끝났어요. 로그인해 주세요.</p>
+
+    <form th:action="@{/login}" method="post" class="stack">
+        <label>아이디
+            <input type="text" name="username" autocomplete="username" required autofocus>
+        </label>
+        <label>비밀번호
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="primary">로그인</button>
+    </form>
+
+    <p class="muted">처음이세요? <a th:href="@{/signup}">회원가입</a></p>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

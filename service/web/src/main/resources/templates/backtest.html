@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('백테스트 결과')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="wide" id="bt" th:attr="data-id=${jobId}">
+    <p><a th:href="@{/backtests}">← 내 백테스트</a></p>
+    <h1>백테스트 결과</h1>
+    <p class="notice error" id="error" hidden></p>
+
+    <section class="card" id="progress-card">
+        <p id="status-text">상태를 확인하는 중…</p>
+        <div class="progress"><span id="progress-bar" style="width:0%"></span></div>
+    </section>
+
+    <div id="content" hidden>
+        <section class="card">
+            <p class="muted" id="meta"></p>
+            <div class="tabs" id="tabs" role="tablist"></div>
+            <p id="exp-help"></p>
+            <h3>자산 가치 (시작 100)</h3>
+            <div class="chart-wide"><canvas id="nav-chart"></canvas></div>
+            <h3>고점 대비 하락</h3>
+            <div class="chart-wide small"><canvas id="dd-chart"></canvas></div>
+        </section>
+
+        <section class="card">
+            <h2>성과 지표</h2>
+            <div class="table-scroll"><table class="table metrics" id="metrics"></table></div>
+            <p class="muted small">변동성은 주간 수익률 기준 연환산, 샤프·소르티노는 무위험 수익률을 0으로 둔 값이에요.</p>
+        </section>
+
+        <section class="card">
+            <h2>연도별 수익률</h2>
+            <div class="table-scroll"><table class="table metrics" id="yearly"></table></div>
+        </section>
+
+        <section class="card">
+            <h2>그해 담은 종목</h2>
+            <div class="form-row">
+                <label>전략 <select id="h-strategy"></select></label>
+                <label>리밸런싱일 <select id="h-date"></select></label>
+            </div>
+            <table class="table"><thead><tr><th>자산</th><th class="num">비중</th></tr></thead><tbody id="h-rows"></tbody></table>
+        </section>
+
+        <section class="card">
+            <h2>한계</h2>
+            <ul id="limits"></ul>
+            <p><a class="button" id="csv-link" href="#">NAV CSV 내려받기</a></p>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/backtest.js}"></script>
+</body>
+</html>

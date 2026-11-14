@@ -1,0 +1,15 @@
+dependencies {
+    api(project(":common"))
+    implementation(project(":auth"))
+    implementation(project(":profile"))
+    implementation(project(":portfolio"))
+    implementation(project(":recommendation"))
+    implementation(project(":alert"))
+    implementation(project(":backtest"))
+    implementation(project(":quant-client"))
+    implementation(libs.spring.boot.starter.webmvc)
+    implementation(libs.spring.boot.starter.thymeleaf)
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.jackson.databind)
+}

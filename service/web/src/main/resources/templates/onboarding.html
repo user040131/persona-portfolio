@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${mode == 'resurvey'} ? '성향 다시 진단' : '시작하기')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="wide">
+    <h1 th:text="${mode == 'resurvey'} ? '투자 성향 다시 진단하기' : '투자 성향을 알려 주세요'">투자 성향을 알려 주세요</h1>
+    <p class="muted" th:if="${mode == 'onboarding'}">
+        답을 바탕으로 마음에 드는 포트폴리오를 만들어 드려요. 마지막에 한 번만 제출해요.
+    </p>
+    <p class="muted" th:if="${mode == 'resurvey'}">
+        보유 종목과 투자 금액은 그대로 두고 성향만 다시 진단해요.
+    </p>
+
+    <!-- 단계 표시와 각 단계 내용은 js/onboarding.js가 /api/onboarding/survey를 받아 그린다 -->
+    <div id="wizard" th:attr="data-mode=${mode}">
+        <ol class="steps" id="steps"></ol>
+        <section id="step-body" class="step-body" aria-live="polite">
+            <p class="muted">불러오는 중…</p>
+        </section>
+        <p class="notice error" id="error" hidden></p>
+        <div class="step-nav">
+            <button type="button" id="prev">이전</button>
+            <button type="button" id="next" class="primary">다음</button>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<!-- 재진단이면 이전 답을 미리 채운다 -->
+<script th:if="${mode == 'resurvey'}" th:inline="javascript">
+    window.__PREFILL__ = JSON.parse(/*[[${prefillJson}]]*/ 'null');
+</script>
+<script th:src="@{/js/onboarding.js}"></script>
+</body>
+</html>
