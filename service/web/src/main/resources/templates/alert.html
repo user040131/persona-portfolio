@@ -25,6 +25,8 @@
             </table>
             <p class="muted small">1주 단위로 내림해 계산했고, 남는 돈은 현금이에요. 거래 수수료·세금은 넣지 않았어요.
                 채권은 비슷한 국고채 ETF·펀드로 맞추면 돼요.</p>
+            <p class="notice" id="manual-help" hidden>실제로 사고판 수량을 넣어 주세요. 채권은 금액(원)으로 넣어요.
+                금액과 거래 후 비중이 바로 바뀌어요.</p>
         </section>
 
         <section class="card">
@@ -45,6 +47,7 @@
             <p class="notice error" id="apply-error" hidden></p>
             <p class="actions">
                 <button type="button" class="primary" id="apply-btn">이대로 했어요</button>
+                <button type="button" id="manual-btn">수량 직접 입력</button>
                 <button type="button" id="dismiss-btn">알림만 닫기</button>
             </p>
             <p class="notice" id="closed" hidden>이미 닫힌 알림이에요. 지금 상태 기준의 제안을 참고로 보여드려요.</p>

@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,10 +44,15 @@ class AlertApiController {
         return alerts.suggestion(user.id(), id);
     }
 
-    /** 제안대로 했다고 기록 → 포트폴리오 반영, 알림 닫힘. */
+    /** 사고판 양을 직접 넣을 때의 본문. 없으면 제안대로. */
+    record ApplyRequest(Map<String, Long> traded) {
+    }
+
+    /** 제안대로(또는 직접 넣은 수량대로) 했다고 기록 → 포트폴리오 반영, 알림 닫힘. */
     @PostMapping("/{id}/apply")
-    Map<String, Object> apply(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
-        alerts.apply(user.id(), id);
+    Map<String, Object> apply(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id,
+                              @RequestBody(required = false) ApplyRequest req) {
+        alerts.apply(user.id(), id, req == null ? null : req.traded());
         return Map.of("alertId", id, "applied", true);
     }
 }

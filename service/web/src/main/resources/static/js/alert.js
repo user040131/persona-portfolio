@@ -17,7 +17,8 @@
 
   async function load() {
     try {
-      render(await api('GET', `/api/alerts/${id}/suggestion`));
+      s = await api('GET', `/api/alerts/${id}/suggestion`);
+      render();
     } catch (e) {
       $('loading').hidden = true;
       $('error').textContent = e.status === 404 ? '알림을 찾을 수 없어요.' : e.message;
@@ -25,7 +26,14 @@
     }
   }
 
-  function render(s) {
+  let s = null;            // 제안
+  let manual = null;       // 직접 입력 중이면 {자산: 사고판 양(종목은 주, 채권은 원)}
+
+  /** 제안 대비 바뀐 금액. 사면 +, 팔면 −. 현금은 그 반대로 움직인다. */
+  const delta = (t) => (t.side === 'BUY' ? 1 : -1) * (amountOf(t) - t.amount);
+  const amountOf = (t) => (!manual ? t.amount : t.quantity != null ? manual[t.asset] * t.close : manual[t.asset]);
+
+  function render() {
     $('loading').hidden = true;
     $('content').hidden = false;
     $('alert-title').textContent = s.alert.title;
@@ -34,33 +42,83 @@
     $('help').textContent = s.help;
     $('meta').textContent = `${s.asOf} 종가 기준 · 지금 총액 ${won(s.totalValue)}`;
 
-    $('trade-rows').replaceChildren(...(s.trades.length ? s.trades.map((t) => el('tr', {},
-      el('td', {}, t.name, t.quantity != null ? el('span', { class: 'muted small' }, ` ${t.asset}`) : null),
-      el('td', { class: `side-${t.side}` }, t.sideLabel),
-      el('td', { class: 'num' }, t.quantity != null ? `${t.quantity.toLocaleString('ko-KR')}주` : '-'),
-      el('td', { class: 'num' }, won(t.amount)))) : [el('tr', {}, el('td', { colspan: 4, class: 'muted' }, '사고팔 것이 없어요.'))]));
+    $('trade-rows').replaceChildren(...(s.trades.length ? s.trades.map((t) => {
+      const amount = el('td', { class: 'num' }, won(amountOf(t)));
+      const input = (value, label) => el('input', {
+        type: 'number', min: 0, step: t.quantity != null ? 1 : 10000, value, class: 'qty', inputmode: 'numeric',
+        'aria-label': `${t.name} ${label}`,
+        oninput: (e) => {
+          manual[t.asset] = Math.max(0, Math.floor(Number(e.target.value) || 0));
+          if (t.quantity != null) amount.textContent = won(amountOf(t));
+          renderAfter();
+        },
+      });
+      const qtyCell = t.quantity == null ? '-'
+        : manual ? el('span', {}, input(manual[t.asset], '수량'), ' 주') : `${t.quantity.toLocaleString('ko-KR')}주`;
+      if (manual && t.quantity == null) amount.replaceChildren(input(manual[t.asset], '금액'), ' 원');
+      return el('tr', {},
+        el('td', {}, t.name, t.quantity != null ? el('span', { class: 'muted small' }, ` ${t.asset}`) : null),
+        el('td', { class: `side-${t.side}` }, t.sideLabel),
+        el('td', { class: 'num' }, qtyCell),
+        amount);
+    }) : [el('tr', {}, el('td', { colspan: 4, class: 'muted' }, '사고팔 것이 없어요.'))]));
+
+    $('manual-help').hidden = !manual;
+    $('manual-btn').textContent = manual ? '제안 수량으로 되돌리기' : '수량 직접 입력';
+    $('apply-btn').textContent = manual ? '입력한 대로 했어요' : '이대로 했어요';
+    renderAfter();
+
+    $('apply-btn').hidden = !s.canApply;
+    $('manual-btn').hidden = !s.canApply || !s.trades.length;
+    $('dismiss-btn').hidden = !s.canApply || s.alert.status === 'DISMISSED';
+    $('closed').hidden = s.canApply;
+  }
+
+  /** 거래 후 비중: 제안의 거래 후 값에서 직접 넣은 양만큼 옮긴다. */
+  function renderAfter() {
+    const T = s.totalValue;
+    const by = { ...s.after.byAsset };
+    const per = {};
+    let cashDelta = 0;
+    for (const t of s.trades) {
+      const d = delta(t);
+      const group = t.quantity != null ? 'stock' : 'bond';
+      by[group] += d / T;
+      per[t.asset] = (per[t.asset] ?? 0) + d / T;
+      cashDelta -= d;
+    }
+    by.cash += cashDelta / T;
+    per.CASH = cashDelta / T;
+    const short = s.after.cash + cashDelta < -0.5;
+    $('apply-error').textContent = short ? `현금이 ${won(-(s.after.cash + cashDelta))} 모자라요. 수량을 다시 확인해 주세요.` : '';
+    $('apply-error').hidden = !short;
+    $('apply-btn').disabled = short;
 
     $('compare').replaceChildren(
       el('span', { class: 'head' }), el('span', { class: 'head' }, '지금'), el('span', { class: 'head' }, '거래 후'),
       el('span', { class: 'head' }, '변화'),
       ...['stock', 'bond', 'cash'].flatMap((k) => {
-        const d = s.after.byAsset[k] - s.before[k];
-        return [el('span', {}, LABEL[k]), el('span', {}, pct(s.before[k])), el('strong', {}, pct(s.after.byAsset[k])),
+        const d = by[k] - s.before[k];
+        return [el('span', {}, LABEL[k]), el('span', {}, pct(s.before[k])), el('strong', {}, pct(by[k])),
           el('span', { class: 'muted' }, Math.abs(d) < 0.005 ? '그대로' : `${d > 0 ? '+' : ''}${(d * 100).toFixed(0)}%p`)];
       }));
     $('target-rows').replaceChildren(...s.targets.map((t) => el('tr', {},
-      el('td', {}, t.name), el('td', { class: 'num' }, pct(t.target, 1)), el('td', { class: 'num' }, pct(t.after, 1)))));
-
-    $('apply-btn').hidden = !s.canApply;
-    $('dismiss-btn').hidden = !s.canApply || s.alert.status === 'DISMISSED';
-    $('closed').hidden = s.canApply;
+      el('td', {}, t.name), el('td', { class: 'num' }, pct(t.target, 1)),
+      el('td', { class: 'num' }, pct(t.after + (per[t.asset] ?? 0), 1)))));
   }
 
+  $('manual-btn').addEventListener('click', () => {
+    manual = manual ? null
+      : Object.fromEntries(s.trades.map((t) => [t.asset, t.quantity != null ? t.quantity : t.amount]));
+    render();
+  });
+
   $('apply-btn').addEventListener('click', async (e) => {
-    if (!confirm('이 제안대로 사고팔았다고 기록할까요? 보유 수량·채권·현금과 목표 비중이 바뀌어요.')) return;
+    const what = manual ? '입력한 수량대로' : '이 제안대로';
+    if (!confirm(`${what} 사고팔았다고 기록할까요? 보유 수량·채권·현금과 목표 비중이 바뀌어요.`)) return;
     e.target.disabled = true;
     try {
-      await api('POST', `/api/alerts/${id}/apply`);
+      await api('POST', `/api/alerts/${id}/apply`, manual ? { traded: manual } : undefined);
       location.href = '/portfolio';
     } catch (err) {
       $('apply-error').textContent = err.message;

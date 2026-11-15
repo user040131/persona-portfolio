@@ -1,6 +1,7 @@
 package kr.team2.portfolio.alert.api;
 
 import java.util.List;
+import java.util.Map;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -33,6 +34,12 @@ public interface AlertFacade {
     /** 리밸런싱 제안 (엔진 I9 + 종목명·문구, FR-ALT-09). */
     ObjectNode suggestion(long userId, long alertId);
 
-    /** 제안대로 했다고 기록: 제안을 다시 계산해 포트폴리오에 반영하고 알림을 닫는다. */
-    void apply(long userId, long alertId);
+    /**
+     * 제안대로 했다고 기록: 제안을 다시 계산해 포트폴리오에 반영하고 알림을 닫는다.
+     *
+     * @param traded 실제로 사고판 양 (종목은 주, 채권은 원). 제안의 사기·팔기 방향은 그대로 쓴다.
+     *               null이면 제안 수량 그대로. 제안에 없는 자산은 무시한다.
+     * @throws kr.team2.portfolio.common.BusinessException ALERT_CLOSED, VALIDATION_ERROR(가진 것보다 많이 팔거나 현금이 모자람)
+     */
+    void apply(long userId, long alertId, Map<String, Long> traded);
 }

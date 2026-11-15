@@ -17,6 +17,7 @@ import kr.team2.portfolio.alert.api.AlertView;
 import kr.team2.portfolio.common.BusinessException;
 import kr.team2.portfolio.common.ErrorCode;
 import kr.team2.portfolio.common.Texts;
+import kr.team2.portfolio.portfolio.api.HoldingsSnapshot;
 import kr.team2.portfolio.portfolio.api.PortfolioFacade;
 import kr.team2.portfolio.portfolio.api.RebalanceOrder;
 import kr.team2.portfolio.quantclient.api.QuantClient;
@@ -181,7 +182,7 @@ class AlertService implements AlertFacade {
 
     @Override
     @Transactional
-    public void apply(long userId, long alertId) {
+    public void apply(long userId, long alertId, Map<String, Long> traded) {
         AlertEntity a = owned(userId, alertId);
         if (!a.isActive()) {
             throw new BusinessException(ErrorCode.ALERT_CLOSED);
@@ -197,10 +198,55 @@ class AlertService implements AlertFacade {
         }
         Map<String, Double> targets = new LinkedHashMap<>();
         p.path("target_weights").properties().forEach(e -> targets.put(e.getKey(), e.getValue().asDouble()));
-        portfolios.applyRebalance(userId, new RebalanceOrder(quantities, buyPrices,
-                p.path("after").path("bond_units").asDouble(), p.path("after").path("cash").asLong(),
-                targets, LocalDate.parse(p.path("as_of").asString())));
+        LocalDate asOf = LocalDate.parse(p.path("as_of").asString());
+        RebalanceOrder order = traded == null
+                ? new RebalanceOrder(quantities, buyPrices, p.path("after").path("bond_units").asDouble(),
+                        p.path("after").path("cash").asLong(), targets, asOf)
+                : manualOrder(portfolios.holdingsSnapshot(userId), p, traded, targets, asOf);
+        portfolios.applyRebalance(userId, order);
         a.close(LocalDateTime.now(clock));
+    }
+
+    /** 사용자가 직접 넣은 거래량으로 거래 후 수량·채권·현금을 계산한다. 방향과 가격은 제안을 따른다. */
+    static RebalanceOrder manualOrder(HoldingsSnapshot now, JsonNode plan, Map<String, Long> traded,
+                                      Map<String, Double> targets, LocalDate asOf) {
+        Map<String, Integer> quantities = new LinkedHashMap<>();
+        now.holdings().forEach(h -> quantities.put(h.code(), h.quantity()));
+        Map<String, Double> buyPrices = new LinkedHashMap<>();
+        double bondIndex = plan.path("bond_index").asDouble();
+        double bondUnits = now.bondUnits();
+        double cash = now.cash();
+        for (JsonNode t : plan.path("trades")) {
+            String asset = t.path("asset").asString();
+            long n = traded.getOrDefault(asset, 0L);
+            if (n < 0) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, Map.of("field", "traded", "asset", asset));
+            }
+            int sign = "BUY".equals(t.path("side").asString()) ? 1 : -1;
+            if (asset.equals("BOND")) {
+                bondUnits += sign * n / bondIndex;
+                cash -= sign * n;
+                if (bondUnits < -1e-6) {
+                    throw new BusinessException(ErrorCode.VALIDATION_ERROR, Map.of("field", "traded", "asset", asset));
+                }
+                bondUnits = Math.max(0, bondUnits);
+            } else {
+                double close = t.path("close").asDouble();
+                long after = quantities.getOrDefault(asset, 0) + sign * n;
+                if (after < 0 || after > Integer.MAX_VALUE) {
+                    throw new BusinessException(ErrorCode.VALIDATION_ERROR, Map.of("field", "traded", "asset", asset));
+                }
+                quantities.put(asset, (int) after);
+                cash -= sign * n * close;
+                if (sign > 0 && n > 0) {
+                    buyPrices.put(asset, close);
+                }
+            }
+        }
+        if (cash < -0.5) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, Map.of("field", "cash", "reason", "NOT_ENOUGH"));
+        }
+        return new RebalanceOrder(quantities, buyPrices, bondUnits, Math.max(0, Math.round(cash)), targets, asOf);
     }
 
     // ================================================================ 도우미

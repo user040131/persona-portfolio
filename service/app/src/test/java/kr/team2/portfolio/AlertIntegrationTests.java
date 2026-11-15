@@ -151,6 +151,33 @@ class AlertIntegrationTests extends MySqlIntegrationTest {
     }
 
     @Test
+    void 사고판_수량을_직접_넣으면_그_수량대로_반영된다() throws Exception {
+        JsonNode pf = json.readTree(patchPortfolio(Map.of("holdings", List.of(Map.of("code", "005930", "quantity", 40))))
+                .andReturn().getResponse().getContentAsString());
+        long r3 = pf.path("alerts").valueStream()
+                .filter(a -> a.path("type").asString().equals("R3") && a.path("target").asString().equals("005930"))
+                .findFirst().orElseThrow().path("alertId").asLong();
+        long cashBefore = jdbc.queryForObject("SELECT cash FROM portfolio WHERE user_id = ?", Long.class, me.id());
+
+        // 가진 것보다 많이 팔면 422, 아무것도 바뀌지 않는다
+        mvc.perform(post("/api/alerts/" + r3 + "/apply").with(user(me)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"traded\":{\"005930\":41}}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        assertThat(alertStatus(r3)).isEqualTo("OPEN");
+
+        // 제안(팔기)보다 적게 5주만 팔았다
+        mvc.perform(post("/api/alerts/" + r3 + "/apply").with(user(me)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"traded\":{\"005930\":5}}"))
+                .andExpect(status().isOk());
+        assertThat(alertStatus(r3)).isEqualTo("CLOSED");
+        assertThat(jdbc.queryForObject("SELECT h.quantity FROM holding h JOIN portfolio p ON p.id = h.portfolio_id "
+                + "WHERE p.user_id = ? AND h.code = '005930'", Integer.class, me.id())).isEqualTo(35);
+        assertThat(jdbc.queryForObject("SELECT cash FROM portfolio WHERE user_id = ?", Long.class, me.id()))
+                .isGreaterThan(cashBefore);                  // 판 돈은 현금으로
+    }
+
+    @Test
     void R6_정기_점검은_연_1회_열리고_사용자가_닫을_때까지_남는다() throws Exception {
         JsonNode r6 = json.readTree("[{\"type\": \"R6\", \"target\": \"\", \"detail\": {\"year\": 2027}}]");
         List<AlertView> opened = alerts.sync(me.id(), r6);
