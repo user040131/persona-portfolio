@@ -122,6 +122,17 @@ class PortfolioEntity {
         this.holdingsChangedAt = holdingsChangedAt;
     }
 
+    /** 처음부터 다시: 보유·목표 비중·채권·현금·매수 기록을 모두 비운다. */
+    void reset(LocalDate holdingsChangedAt) {
+        holdings.clear();
+        targetWeights.clear();
+        bondUnits = 0;
+        cash = 0;
+        purchasedAt = null;
+        lastR6Year = null;
+        this.holdingsChangedAt = holdingsChangedAt;
+    }
+
     /** 매수 완료: 채권·현금을 더하고 기준일을 옮긴다 (docs/03 §6.4 3·5단계). */
     void addPurchase(double bondUnits, long cash, LocalDate asOf) {
         this.bondUnits += bondUnits;

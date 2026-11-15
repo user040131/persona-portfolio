@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${mode == 'resurvey'} ? '성향 다시 진단' : '시작하기')}"></head>
+<head th:replace="~{fragments/layout :: head(${mode == 'resurvey'} ? '성향 다시 진단' : (${mode == 'restart'} ? '처음부터 다시' : '시작하기'))}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header}"></header>
 
 <main class="wide">
-    <h1 th:text="${mode == 'resurvey'} ? '투자 성향 다시 진단하기' : '투자 성향을 알려 주세요'">투자 성향을 알려 주세요</h1>
+    <h1 th:text="${mode == 'resurvey'} ? '투자 성향 다시 진단하기' : (${mode == 'restart'} ? '처음부터 다시 시작하기' : '투자 성향을 알려 주세요')">투자 성향을 알려 주세요</h1>
     <p class="muted" th:if="${mode == 'onboarding'}">
         답을 바탕으로 마음에 드는 포트폴리오를 만들어 드려요. 마지막에 한 번만 제출해요.
     </p>
     <p class="muted" th:if="${mode == 'resurvey'}">
         보유 종목과 투자 금액은 그대로 두고 성향만 다시 진단해요.
+    </p>
+    <p class="notice" th:if="${mode == 'restart'}">
+        투자 금액, 성향, 보유 종목을 모두 새로 입력해요. 제출하면 지금 포트폴리오와 매수 기록이 지워지고 새로 시작해요.
     </p>
 
     <!-- 단계 표시와 각 단계 내용은 js/onboarding.js가 /api/onboarding/survey를 받아 그린다 -->

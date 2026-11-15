@@ -99,6 +99,7 @@
             <a th:if="${purchased}" th:href="@{/portfolio}">내 포트폴리오</a>
             <a th:if="${latestRecommendationId != null}" th:href="@{/recommendations/{id}(id=${latestRecommendationId})}">최근 추천 보기</a>
             <a th:href="@{/profile/survey}">성향 다시 진단하기</a>
+            <a th:href="@{/profile/restart}">처음부터 다시 시작하기</a>
         </p>
     </section>
 </main>

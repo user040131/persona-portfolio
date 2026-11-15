@@ -57,6 +57,13 @@ class OnboardingApiController {
                 req.investAmount(), req.answers(), req.holdings() == null ? List.of() : req.holdings()));
     }
 
+    /** 처음부터 다시: 온보딩과 같은 본문. 포트폴리오를 새로 채운다. */
+    @PostMapping("/onboarding/restart")
+    ProfileView restart(@AuthenticationPrincipal AuthenticatedUser user, @RequestBody OnboardingRequest req) {
+        return profiles.restart(user.id(), new OnboardingCommand(
+                req.investAmount(), req.answers(), req.holdings() == null ? List.of() : req.holdings()));
+    }
+
     @GetMapping("/profile")
     ProfileView profile(@AuthenticationPrincipal AuthenticatedUser user) {
         return profiles.current(user.id()).orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));

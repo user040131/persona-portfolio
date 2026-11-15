@@ -72,16 +72,20 @@ class PortfolioService implements PortfolioFacade {
 
     /**
      * 온보딩 때 받은 기존 보유로 포트폴리오를 만든다 (docs/02 §3.3).
+     * 처음부터 다시 하기면 있던 포트폴리오를 비우고(매수 기록 포함) 새 보유로 채운다.
      * 온보딩과 같은 트랜잭션에서 동기로 처리해, 실패하면 온보딩도 취소되게 한다.
      */
     @EventListener
     @Transactional
     void on(OnboardingCompleted event) {
-        if (portfolios.findByUserId(event.userId()).isPresent()) {
-            return;   // 이미 있으면 다시 만들지 않는다
-        }
-        PortfolioEntity pf = portfolios.saveAndFlush(new PortfolioEntity(
-                event.userId(), LocalDate.now(clock.withZone(SEOUL)), LocalDateTime.now(clock)));
+        LocalDate today = LocalDate.now(clock.withZone(SEOUL));
+        PortfolioEntity pf = portfolios.findByUserId(event.userId())
+                .map(old -> {
+                    old.reset(today);
+                    return portfolios.saveAndFlush(old);   // 지운 행을 먼저 내보내야 같은 종목 INSERT와 키가 겹치지 않는다
+                })
+                .orElseGet(() -> portfolios.saveAndFlush(
+                        new PortfolioEntity(event.userId(), today, LocalDateTime.now(clock))));
         event.holdings().forEach(h -> pf.getHoldings().add(new HoldingEntity(
                 pf.getId(), h.code(), h.quantity(), null, HoldingEntity.Origin.EXISTING)));
         portfolios.save(pf);

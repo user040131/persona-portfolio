@@ -114,6 +114,16 @@ class PageController {
         return "onboarding";
     }
 
+    /** 처음부터 다시: 투자 금액·성향·보유 종목을 모두 새로 입력한다. */
+    @GetMapping("/profile/restart")
+    String restart(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
+        if (!profiles.isOnboarded(user.id())) {
+            return "redirect:/onboarding";
+        }
+        model.addAttribute("mode", "restart");
+        return "onboarding";
+    }
+
     @GetMapping("/profile")
     String profile(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
         ProfileView profile = profiles.current(user.id()).orElse(null);

@@ -37,6 +37,12 @@ class OnboardingStateEntity {
         return pendingInvestAmount;
     }
 
+    /** 처음부터 다시: 새 금액으로 첫 추천을 다시 받는다. */
+    void restart(long pendingInvestAmount, LocalDateTime completedAt) {
+        this.pendingInvestAmount = pendingInvestAmount;
+        this.completedAt = completedAt;
+    }
+
     /** 매수 완료 후: 첫 추천 금액은 다시 쓰지 않는다 (docs/03 §6.4). */
     void clearPendingInvestAmount() {
         this.pendingInvestAmount = null;

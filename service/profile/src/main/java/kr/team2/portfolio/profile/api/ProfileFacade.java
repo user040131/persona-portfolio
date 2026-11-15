@@ -22,6 +22,15 @@ public interface ProfileFacade {
      */
     ProfileView onboard(long userId, OnboardingCommand command);
 
+    /**
+     * 처음부터 다시: 투자 금액·설문·보유 종목을 새로 받는다. 프로필은 새 버전으로 저장하고
+     * {@link OnboardingCompleted}를 다시 내서 포트폴리오를 입력한 보유로 새로 채운다 (매수 기록도 지운다).
+     *
+     * @throws kr.team2.portfolio.common.BusinessException PROFILE_NOT_FOUND, VALIDATION_ERROR,
+     *                                                     INVALID_SURVEY, UNKNOWN_STOCK
+     */
+    ProfileView restart(long userId, OnboardingCommand command);
+
     /** 재진단: 새 버전으로 저장하고 {@link ProfileChanged} 발행. 보유·투자 금액은 그대로. */
     ProfileView resurvey(long userId, Answers answers);
 

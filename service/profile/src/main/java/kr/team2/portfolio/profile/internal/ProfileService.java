@@ -90,10 +90,7 @@ class ProfileService implements ProfileFacade {
         if (onboarding.existsById(userId)) {
             throw new BusinessException(ErrorCode.ALREADY_ONBOARDED);
         }
-        if (cmd.investAmount() < props.minInvestAmount()) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
-                    Map.of("field", "investAmount", "min", props.minInvestAmount()));
-        }
+        checkAmount(cmd.investAmount());
         List<OnboardingCompleted.ExistingHolding> holdings = validateHoldings(cmd.holdings());
         ProfileEntity saved = save(userId, 1, cmd.answers());
         onboarding.save(new OnboardingStateEntity(userId, cmd.investAmount(), LocalDateTime.now(clock)));
@@ -103,14 +100,39 @@ class ProfileService implements ProfileFacade {
 
     @Override
     @Transactional
+    public ProfileView restart(long userId, OnboardingCommand cmd) {
+        OnboardingStateEntity state = onboarding.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
+        checkAmount(cmd.investAmount());
+        List<OnboardingCompleted.ExistingHolding> holdings = validateHoldings(cmd.holdings());
+        ProfileEntity saved = renew(userId, cmd.answers());
+        state.restart(cmd.investAmount(), LocalDateTime.now(clock));
+        events.publishEvent(new OnboardingCompleted(userId, saved.getId(), holdings));
+        return view(saved);
+    }
+
+    @Override
+    @Transactional
     public ProfileView resurvey(long userId, Answers answers) {
+        ProfileEntity saved = renew(userId, answers);
+        events.publishEvent(new ProfileChanged(userId, saved.getId()));
+        return view(saved);
+    }
+
+    /** 지금 프로필을 내리고 다음 버전으로 저장한다. */
+    private ProfileEntity renew(long userId, Answers answers) {
         ProfileEntity old = profiles.findByUserIdAndCurrentTrue(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND));
         old.retire();
         profiles.saveAndFlush(old);
-        ProfileEntity saved = save(userId, old.getVersion() + 1, answers);
-        events.publishEvent(new ProfileChanged(userId, saved.getId()));
-        return view(saved);
+        return save(userId, old.getVersion() + 1, answers);
+    }
+
+    private void checkAmount(long amount) {
+        if (amount < props.minInvestAmount()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    Map.of("field", "investAmount", "min", props.minInvestAmount()));
+        }
     }
 
     @Override

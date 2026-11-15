@@ -164,6 +164,30 @@ class OnboardingIntegrationTests extends MySqlIntegrationTest {
     }
 
     @Test
+    void 처음부터_다시하면_금액과_보유가_새로_바뀌고_매수_기록이_지워진다() throws Exception {
+        onboard(goldenRequest()).andExpect(status().isCreated());
+        jdbc.update("UPDATE portfolio SET purchased_at = CURDATE(), cash = 1000 WHERE user_id = ?", me.id());
+
+        Map<String, Object> req = new java.util.HashMap<>(goldenRequest());
+        req.put("investAmount", 50_000_000);
+        req.put("holdings", List.of(Map.of("code", "005930", "quantity", 7), Map.of("code", "000660", "quantity", 3)));
+        mvc.perform(post("/api/onboarding/restart").with(user(me)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(2));
+
+        assertThat(jdbc.queryForObject("SELECT pending_invest_amount FROM onboarding_state WHERE user_id = ?",
+                Long.class, me.id())).isEqualTo(50_000_000L);
+        assertThat(jdbc.queryForList(
+                "SELECT CONCAT(h.code, ':', h.quantity) FROM holding h JOIN portfolio p ON p.id = h.portfolio_id "
+                        + "WHERE p.user_id = ? ORDER BY h.code", String.class, me.id()))
+                .containsExactly("000660:3", "005930:7");
+        Map<String, Object> pf = jdbc.queryForMap("SELECT purchased_at, cash FROM portfolio WHERE user_id = ?", me.id());
+        assertThat(pf.get("purchased_at")).isNull();
+        assertThat(((Number) pf.get("cash")).longValue()).isZero();
+    }
+
+    @Test
     void 설문_정의와_종목_검색() throws Exception {
         mvc.perform(get("/api/onboarding/survey").with(user(me)))
                 .andExpect(status().isOk())

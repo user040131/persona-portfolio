@@ -3,6 +3,7 @@
  * 단계 전환은 브라우저에서만 하고, 마지막에 한 번만 서버로 보낸다.
  *   온보딩: 투자 금액 → 성향 7문항 → 추가 문항 → 보유 종목 → 확인  →  POST /api/onboarding
  *   재진단:              성향 7문항 → 추가 문항 →              확인  →  PUT  /api/profile/survey
+ *   처음부터 다시: 온보딩과 같은 단계                                →  POST /api/onboarding/restart
  */
 (() => {
   const root = document.getElementById('wizard');
@@ -177,7 +178,7 @@
       const [a2, a3, a4, a5, a6] = survey.extras;
       const label6 = state.a6.map((k) => a6.keyedOptions.find((o) => o.key === k)?.text).join(', ');
       const items = [
-        ...(mode === 'onboarding' ? [['투자 금액', manwon(state.investAmount)]] : []),
+        ...(mode !== 'resurvey' ? [['투자 금액', manwon(state.investAmount)]] : []),
         ...survey.questions.map((q, i) => [q.text, q.options[state.q[i] - 1]]),
         [a2.text, a2.options[state.a2 - 1]],
         [a3.text, state.a3 ? '있다' : '없다'],
@@ -185,7 +186,7 @@
         [a5.text, a5.options[state.a5 - 1]],
         [a6.text, label6],
         ['제외할 업종', state.a7.length ? state.a7.join(', ') : '없음'],
-        ...(mode === 'onboarding'
+        ...(mode !== 'resurvey'
           ? [['보유 종목', state.holdings.length ? state.holdings.map((h) => `${h.name} ${h.quantity}주`).join(', ') : '없음']]
           : []),
       ];
@@ -219,9 +220,10 @@
   // ---------- 제출 ----------
   async function submit() {
     const answers = { q: state.q, a2: state.a2, a3: state.a3, a4: state.a4, a5: state.a5, a6: state.a6, a7: state.a7 };
+    if (mode === 'restart' && !confirm('지금 포트폴리오와 매수 기록이 지워져요. 처음부터 다시 시작할까요?')) return;
     const req = mode === 'resurvey'
       ? { method: 'PUT', url: '/api/profile/survey', body: answers }
-      : { method: 'POST', url: '/api/onboarding',
+      : { method: 'POST', url: mode === 'restart' ? '/api/onboarding/restart' : '/api/onboarding',
           body: { investAmount: state.investAmount, ...answers, holdings: state.holdings.map(({ code, quantity }) => ({ code, quantity })) } };
     $('next').disabled = true;
     try {
@@ -247,7 +249,7 @@
       el('li', { class: i === step ? 'current' : i < step ? 'done' : '' }, label)));
     body.replaceChildren(...[views[STEPS[step][0]]()].flat(2));
     $('prev').hidden = step === 0;
-    $('next').textContent = step === STEPS.length - 1 ? (mode === 'resurvey' ? '다시 진단하기' : '제출하기') : '다음';
+    $('next').textContent = step === STEPS.length - 1 ? (mode === 'resurvey' ? '다시 진단하기' : mode === 'restart' ? '다시 시작하기' : '제출하기') : '다음';
   }
 
   $('prev').addEventListener('click', () => { showError(''); step = Math.max(0, step - 1); render(); });
