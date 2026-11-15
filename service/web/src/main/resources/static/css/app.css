@@ -15,7 +15,11 @@ body {
     color: var(--fg);
     background: var(--bg);
     line-height: 1.6;
+    word-break: keep-all;          /* 한국어를 낱말 중간에서 자르지 않는다 */
+    overflow-wrap: break-word;     /* 아주 긴 낱말만 예외로 자른다 */
 }
+
+h1, h2, h3, p, li, dd, legend, summary { text-wrap: pretty; }
 
 .site-header {
     display: flex;
@@ -41,7 +45,7 @@ body {
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .stack label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
 
-input { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 15px; }
+input, select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 15px; font-family: inherit; background: #fff; }
 
 button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; background: #f6f8fa; cursor: pointer; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -60,6 +64,10 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table th, .table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
 .table .num { text-align: right; }
+.table th { white-space: nowrap; }
+@media (max-width: 600px) {
+    .table { display: block; overflow-x: auto; }   /* 좁은 화면에선 표만 옆으로 밀어 본다 */
+}
 
 /* ---------- 단계형 설문 ---------- */
 .steps { display: flex; gap: 8px; list-style: none; padding: 0; margin: 16px 0; flex-wrap: wrap; }
@@ -104,7 +112,7 @@ input[type=search] { width: 100%; }
 
 /* ---- 추천 화면 ---- */
 .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.reco-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.reco-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .reco-head h1 { margin: 0; }
 .chart-row { display: grid; grid-template-columns: 260px 1fr; gap: 24px; align-items: center; margin: 16px 0; }
 .chart-box { position: relative; width: 260px; height: 260px; }
@@ -168,6 +176,11 @@ a.button.small { padding: 2px 8px; font-size: 13px; }
 .site-nav { display: flex; gap: 14px; font-size: 14px; margin-left: 24px; margin-right: auto; }
 .site-nav a { color: var(--muted); text-decoration: none; }
 .site-nav a:hover { color: var(--accent); }
+.brand, .site-nav a, .logout button { white-space: nowrap; }
+@media (max-width: 600px) {
+    .site-header { flex-wrap: wrap; gap: 8px 16px; padding: 12px 16px; }
+    .site-nav { order: 3; width: 100%; margin: 0; }
+}
 .progress { height: 8px; background: #f6f8fa; border-radius: 4px; overflow: hidden; }
 .progress > span { display: block; height: 100%; background: var(--accent); transition: width .3s; }
 .chart-wide { position: relative; height: 320px; }
@@ -176,5 +189,6 @@ a.button.small { padding: 2px 8px; font-size: 13px; }
 .table-scroll { overflow-x: auto; }
 .form-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: end; }
 .form-row label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.form-row input, .form-row select { width: 140px; height: 40px; }
 .checks { display: flex; gap: 12px; flex-wrap: wrap; }
 .checks label { flex-direction: row; align-items: center; gap: 6px; }
